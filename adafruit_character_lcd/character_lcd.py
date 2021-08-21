@@ -69,14 +69,10 @@ _LCD_2LINE = const(0x08)
 _LCD_1LINE = const(0x00)
 _LCD_5X8DOTS = const(0x00)
 
-# Offset for up to 4 rows.
-_LCD_ROW_OFFSETS = (0x00, 0x40, 0x14, 0x54)
-
 
 def _set_bit(byte_value, position, val):
     # Given the specified byte_value set the bit at position to the provided
     # boolean value val and return the modified byte.
-    ret = None
     if val:
         ret = byte_value | (1 << position)
     else:
@@ -126,6 +122,14 @@ class Character_LCD:
         self.dl5 = d5
         self.dl6 = d6
         self.dl7 = d7
+
+        # Offset for up to 4 rows.
+        self.row_offsets = bytearray((0x00, 0x40))
+        for row in range(2, lines, 2):
+            upper = self.row_offsets[-2] + columns
+            lower = self.row_offsets[-1] + columns
+            self.row_offsets.append(upper)
+            self.row_offsets.append(lower)
 
         # set all pins as outputs
         for pin in (rs, en, d4, d5, d6, d7):
@@ -243,7 +247,7 @@ class Character_LCD:
         if column >= self.columns:
             column = self.columns - 1
         # Set location
-        self._write8(_LCD_SETDDRAMADDR | (column + _LCD_ROW_OFFSETS[row]))
+        self._write8(_LCD_SETDDRAMADDR | (column + self.row_offsets[row]))
         # Update self.row and self.column to match setter
         self.row = row
         self.column = column
